@@ -227,8 +227,10 @@ void YoloObjectDetector::checkForObjectsActionGoalCB()
 
   if (cam_image) {
     {
-      boost::unique_lock<boost::shared_mutex> lockImageCallback(mutexImageCallback_);
-      camImageCopy_ = cam_image->image.clone();
+      boost::unique_lock<boost::shared_mutex> lockImageCallback(mutexGoalImageCallback_);
+      goalImageCopy_ = cam_image->image.clone();
+      goalImageHeader_ = imageAction.header;
+      goalAddedToBuffer_ = false;
     }
     {
       boost::unique_lock<boost::shared_mutex> lockImageCallback(mutexActionStatus_);
@@ -406,7 +408,21 @@ void *YoloObjectDetector::detectInThread()
 
 void *YoloObjectDetector::fetchInThread()
 {
-  IplImageWithHeader_ imageAndHeader = getIplImageWithHeader();
+  // IplImageWithHeader_ imageAndHeader = getIplImageWithHeader();
+  IplImageWithHeader_ imageAndHeader;
+  if (isCheckingForObjects() && !goalAddedToBuffer_)
+  {
+    imageAndHeader = getIplImageWithHeader(true);
+    {
+      boost::unique_lock<boost::shared_mutex> lock(mutexGoalImageCallback_);
+  		goalAddedToBuffer_ = true;
+  		goalBuffIndex_ = buffIndex_;
+    }
+  }
+  else
+  {
+    imageAndHeader = getIplImageWithHeader(false);
+  }
   IplImage* ROS_img = imageAndHeader.image;
   ipl_into_image(ROS_img, buff_[buffIndex_]);
   headerBuff_[buffIndex_] = imageAndHeader.header;
@@ -502,7 +518,20 @@ void YoloObjectDetector::yolo()
   layer l = net_->layers[net_->n - 1];
   roiBoxes_ = (darknet_ros::RosBox_ *) calloc(l.w * l.h * l.n, sizeof(darknet_ros::RosBox_));
 
-  IplImageWithHeader_ imageAndHeader = getIplImageWithHeader();
+  // IplImageWithHeader_ imageAndHeader = getIplImageWithHeader();
+  IplImageWithHeader_ imageAndHeader;
+  if (isCheckingForObjects() && !goalAddedToBuffer_)
+  {
+  	imageAndHeader = getIplImageWithHeader(true);
+  	{
+  		boost::unique_lock<boost::shared_mutex> lock(mutexGoalImageCallback_);
+  		goalAddedToBuffer_ = true;
+  	}
+  }
+  else
+  {
+  	imageAndHeader = getIplImageWithHeader(false);
+  }
   IplImage* ROS_img = imageAndHeader.image;
   buff_[0] = ipl_to_image(ROS_img);
   buff_[1] = copy_image(buff_[0]);
@@ -555,12 +584,22 @@ void YoloObjectDetector::yolo()
 
 }
 
-IplImageWithHeader_ YoloObjectDetector::getIplImageWithHeader()
+IplImageWithHeader_ YoloObjectDetector::getIplImageWithHeader(bool goal_image)
 {
-  boost::shared_lock<boost::shared_mutex> lock(mutexImageCallback_);
-  IplImage* ROS_img = new IplImage(camImageCopy_);
-  IplImageWithHeader_ header = {.image = ROS_img, .header = imageHeader_};
-  return header;
+  if( goal_image )
+  {
+    boost::shared_lock<boost::shared_mutex> lock(mutexGoalImageCallback_);
+    IplImage* ROS_img = new IplImage(goalImageCopy_);
+    IplImageWithHeader_ header = {.image = ROS_img, .header = goalImageHeader_};
+    return header;
+  }
+  else
+  {
+    boost::shared_lock<boost::shared_mutex> lock(mutexImageCallback_);
+    IplImage* ROS_img = new IplImage(camImageCopy_);
+    IplImageWithHeader_ header = {.image = ROS_img, .header = imageHeader_};
+    return header;
+  }
 }
 
 bool YoloObjectDetector::getImageStatus(void)
@@ -628,12 +667,13 @@ void *YoloObjectDetector::publishInThread()
     msg.data = 0;
     objectPublisher_.publish(msg);
   }
-  if (isCheckingForObjects()) {
+  if (isCheckingForObjects() && ( ((buffIndex_ + 1) % 3) == goalBuffIndex_ )) {
     ROS_DEBUG("[YoloObjectDetector] check for objects in image.");
     darknet_ros_msgs::CheckForObjectsResult objectsActionResult;
-    objectsActionResult.id = buffId_[0];
+    objectsActionResult.id = buffId_[goalBuffIndex_]; // NOTE: Mutex locking?
     objectsActionResult.bounding_boxes = boundingBoxesResults_;
     checkForObjectsActionServer_->setSucceeded(objectsActionResult, "Send bounding boxes.");
+    // NOTE: Reset goalBuffIndex_ and goalAddedToBuffer_?
   }
   boundingBoxesResults_.bounding_boxes.clear();
   for (int i = 0; i < numClasses_; i++) {
