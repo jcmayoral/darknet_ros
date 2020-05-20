@@ -476,7 +476,7 @@ void YoloObjectDetector::yolo() {
   if (!demoPrefix_ && viewImage_) {
     cv::namedWindow("YOLO V3", cv::WINDOW_NORMAL);
     if (fullScreen_) {
-      cv::setWindowProperty("YOLO V3", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
+      cv::setWindowProperty("YOLO V3", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
     } else {
       cv::moveWindow("YOLO V3", 0, 0);
       cv::resizeWindow("YOLO V3", 640, 480);

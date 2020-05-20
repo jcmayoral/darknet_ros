@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(darknet_ros)
 
+add_compile_options(-std=c++11)
+
 # Set c++11 cmake flags
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 set(CMAKE_C_FLAGS "-Wall -Wno-unused-result -Wno-unknown-pragmas -Wno-unused-variable -Wfatal-errors -fPIC ${CMAKE_C_FLAGS}")
@@ -47,7 +49,7 @@ endif ( X11_FOUND )
 
 # Find rquired packeges
 find_package(Boost REQUIRED COMPONENTS thread)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 3.2.0 EXACT REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 find_package(catkin REQUIRED
   COMPONENTS
