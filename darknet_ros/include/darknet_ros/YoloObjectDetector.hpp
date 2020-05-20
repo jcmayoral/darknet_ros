@@ -102,7 +102,7 @@ class YoloObjectDetector {
    * Callback of camera.
    * @param[in] msg image pointer.
    */
-  void cameraCallback(const sensor_msgs::ImageConstPtr& msg);
+  void cameraCallback(const sensor_msgs::ImageConstPtr& msg, std::string id);
 
   /*!
    * Check for objects action goal callback.
@@ -145,6 +145,9 @@ class YoloObjectDetector {
 
   //! ROS subscriber and publisher.
   image_transport::Subscriber imageSubscriber_;
+  //DUAL
+  image_transport::Subscriber imageSubscriber2_;
+
   ros::Publisher objectPublisher_;
   ros::Publisher boundingBoxesPublisher_;
 

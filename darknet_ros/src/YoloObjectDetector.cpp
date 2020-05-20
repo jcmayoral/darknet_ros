@@ -115,7 +115,7 @@ void YoloObjectDetector::init() {
   yoloThread_ = std::thread(&YoloObjectDetector::yolo, this);
 
   // Initialize publisher and subscriber.
-  std::string cameraTopicName;
+  std::string cameraTopicName, cameraTopicName2;
   int cameraQueueSize;
   std::string objectDetectorTopicName;
   int objectDetectorQueueSize;
@@ -128,6 +128,8 @@ void YoloObjectDetector::init() {
   bool detectionImageLatch;
 
   nodeHandle_.param("subscribers/camera_reading/topic", cameraTopicName, std::string("/camera/image_raw"));
+  nodeHandle_.param("subscribers/camera_reading/topic2", cameraTopicName2, std::string("/camera/image_raw"));
+
   nodeHandle_.param("subscribers/camera_reading/queue_size", cameraQueueSize, 1);
   nodeHandle_.param("publishers/object_detector/topic", objectDetectorTopicName, std::string("found_object"));
   nodeHandle_.param("publishers/object_detector/queue_size", objectDetectorQueueSize, 1);
@@ -139,7 +141,9 @@ void YoloObjectDetector::init() {
   nodeHandle_.param("publishers/detection_image/queue_size", detectionImageQueueSize, 1);
   nodeHandle_.param("publishers/detection_image/latch", detectionImageLatch, true);
 
-  imageSubscriber_ = imageTransport_.subscribe(cameraTopicName, cameraQueueSize, &YoloObjectDetector::cameraCallback, this);
+  imageSubscriber_ = imageTransport_.subscribe(cameraTopicName, cameraQueueSize, boost::bind(&YoloObjectDetector::cameraCallback, this, _1,"topic1"));
+  imageSubscriber2_ = imageTransport_.subscribe(cameraTopicName2, cameraQueueSize,  boost::bind(&YoloObjectDetector::cameraCallback,this, _1, "topic2"));
+
   objectPublisher_ =
       nodeHandle_.advertise<darknet_ros_msgs::ObjectCount>(objectDetectorTopicName, objectDetectorQueueSize, objectDetectorLatch);
   boundingBoxesPublisher_ =
@@ -156,8 +160,9 @@ void YoloObjectDetector::init() {
   checkForObjectsActionServer_->start();
 }
 
-void YoloObjectDetector::cameraCallback(const sensor_msgs::ImageConstPtr& msg) {
+void YoloObjectDetector::cameraCallback(const sensor_msgs::ImageConstPtr& msg, std::string id) {
   ROS_DEBUG("[YoloObjectDetector] USB image received.");
+  ROS_ERROR_STREAM("ID "<< id);
 
   cv_bridge::CvImagePtr cam_image;
 
