@@ -202,6 +202,12 @@ class YoloObjectDetector {
   cv::Mat camImageCopy_;
   boost::shared_mutex mutexImageCallback_;
 
+  std_msgs::Header goalImageHeader_;
+  cv::Mat goalImageCopy_;
+  int goalBuffIndex_ = 0;
+  bool goalAddedToBuffer_ = false;
+  boost::shared_mutex mutexGoalImageCallback_;
+
   bool imageStatus_ = false;
   boost::shared_mutex mutexImageStatus_;
 
@@ -234,7 +240,7 @@ class YoloObjectDetector {
 
   void yolo();
 
-  IplImageWithHeader_ getIplImageWithHeader();
+  IplImageWithHeader_ getIplImageWithHeader(bool goal_image);
 
   bool getImageStatus(void);
 
