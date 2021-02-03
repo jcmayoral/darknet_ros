@@ -1,0 +1,14 @@
+yolo_model:
+
+  config_file:
+    name: iros2021.cfg
+  weight_file:
+    name: iros2021_900.weights
+  threshold:
+    value: 0.005
+  detection_classes:
+    names:
+      - ring0
+      - ring1
+      - ring2
+      - ring3
