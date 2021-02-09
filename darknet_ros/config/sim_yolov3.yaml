@@ -1,11 +1,11 @@
 yolo_model:
 
   config_file:
-    name: iros2021.cfg
+    name: iros2021-tiny.cfg
   weight_file:
-    name: iros2021_900.weights
+    name: iros2021-tiny_10000.weights
   threshold:
-    value: 0.005
+    value: 0.05
   detection_classes:
     names:
       - ring0

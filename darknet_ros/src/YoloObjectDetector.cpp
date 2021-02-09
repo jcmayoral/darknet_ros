@@ -384,12 +384,11 @@ void *YoloObjectDetector::fetchInThread()
   {
     imageAndHeader = getIplImageWithHeader(false);
   }
+  IplImage* ROS_img = imageAndHeader.image;
+  ipl_into_image(ROS_img, buff_[buffIndex_]);
+  headerBuff_[buffIndex_] = imageAndHeader.header;
   {
     boost::shared_lock<boost::shared_mutex> lock(mutexImageCallback_);
-    IplImageWithHeader_ imageAndHeader = getIplImageWithHeader();
-    IplImage* ROS_img = imageAndHeader.image;
-    ipl_into_image(ROS_img, buff_[buffIndex_]);
-    headerBuff_[buffIndex_] = imageAndHeader.header;
     buffId_[buffIndex_] = actionId_;
   }
   rgbgr_image(buff_[buffIndex_]);
