@@ -3,10 +3,9 @@ yolo_model:
   config_file:
     name: iros2021-tiny.cfg
   weight_file:
-    #name: iros2021-tiny_10000.weights
-    name: augmented-tiny_best.weights
+    name: iros2021-tiny_best.weights
   threshold:
-    value: 0.3
+    value: 0.1
   detection_classes:
     names:
       - lethal
